@@ -1,0 +1,14 @@
+LOCAL VERIFICATION
+
+Environment:
+Flutter 3.41.9
+Dart 3.11.5
+Platform: Windows
+
+Command:
+flutter test
+
+Result:
+00:02 +6: F:/assignment_repo/assignment_project/test/unit_test.dart: FakeSmsApi keeps sent messages isolated by tenant and calculates segments exactly
+[info] Fake backend accepted SMS: tenant=unit-test-tenant-a recipient=+4*****78 body=321 chars
+00:04 +13: All tests passed!  
