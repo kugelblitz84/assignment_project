@@ -160,6 +160,8 @@ flutter analyze
 flutter test
 ```
 
+The workflow is in [`.github/workflows/flutter-ci.yml`](.github/workflows/flutter-ci.yml).
+
 ## Platform notes
 
 The adaptive layout uses the available width rather than stretching the phone layout. Before final submission, the repository should include screenshots from actual runs at approximately:

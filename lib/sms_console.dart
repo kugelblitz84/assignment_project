@@ -42,22 +42,27 @@ class _SmsConsolePageState extends State<SmsConsolePage> {
   }
 
   Future<void> loadCosts() async {
-    setState(() => loading = true);
-    final res = await http.get(
-      Uri.parse('$kApiBase/api/v1/sms/cost/breakdown'),
-      headers: {'Authorization': 'Bearer $kApiKey'},
-    );
-    final data = jsonDecode(res.body);
-    costRows = data['rows'] as List<dynamic>;
+    try {
+      setState(() => loading = true);
+      final res = await http.get(
+        Uri.parse('$kApiBase/api/v1/sms/cost/breakdown'),
+        headers: {'Authorization': 'Bearer $kApiKey'},
+      );
+      final data = jsonDecode(res.body);
+      costRows = data['rows'] as List<dynamic>;
 
-    double total = 0.0;
-    for (var i = 0; i < costRows.length; i++) {
-      total = total + (costRows[i]['totalCost'] as double);
+      double total = 0.0;
+      for (var i = 0; i < costRows.length; i++) {
+        total = total + (costRows[i]['totalCost'] as double);
+      }
+
+      AppState.totalCost = total;
+      AppState.history = costRows;
+      setState(() => loading = false);
+    } catch (e) {
+      setState(() => loading = false);
+      AppState.lastError = e.toString();
     }
-
-    AppState.totalCost = total;
-    AppState.history = costRows;
-    setState(() => loading = false);
   }
 
   Future<void> sendSms() async {
@@ -85,7 +90,9 @@ class _SmsConsolePageState extends State<SmsConsolePage> {
       AppState.totalCost = AppState.totalCost + cost;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Sent via $provider — €${cost.toStringAsFixed(4)}')),
+        SnackBar(
+          content: Text('Sent via $provider — €${cost.toStringAsFixed(4)}'),
+        ),
       );
 
       await loadCosts();
@@ -114,10 +121,7 @@ class _SmsConsolePageState extends State<SmsConsolePage> {
                     decoration: const InputDecoration(labelText: 'Message'),
                   ),
                   const SizedBox(height: 12),
-                  ElevatedButton(
-                    onPressed: sendSms,
-                    child: const Text('Send'),
-                  ),
+                  ElevatedButton(onPressed: sendSms, child: const Text('Send')),
                   const SizedBox(height: 12),
                   Text('Total: €${AppState.totalCost.toStringAsFixed(2)}'),
                   Expanded(
@@ -128,10 +132,13 @@ class _SmsConsolePageState extends State<SmsConsolePage> {
                       ),
                       builder: (context, snapshot) {
                         if (!snapshot.hasData) {
-                          return const Center(child: CircularProgressIndicator());
+                          return const Center(
+                            child: CircularProgressIndicator(),
+                          );
                         }
                         final rows =
-                            jsonDecode(snapshot.data!.body)['rows'] as List<dynamic>;
+                            jsonDecode(snapshot.data!.body)['rows']
+                                as List<dynamic>;
                         return ListView.builder(
                           itemCount: rows.length,
                           itemBuilder: (context, i) {
