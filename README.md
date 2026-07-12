@@ -9,6 +9,8 @@ A rebuild of the supplied SMS console focused on correctness, tenant isolation, 
 - Flutter SDK on the stable channel
 - A configured Android/iOS emulator, physical device, or desktop/web target
 
+The submission was developed and verified using Flutter 3.41.9 and Dart 3.11.5. GitHub Actions uses the same pinned Flutter version to reduce differences between local and CI test results.
+
 ### Default: fake backend
 
 The fake backend is enabled by default, so no server or real credentials are required.
@@ -20,7 +22,7 @@ flutter run
 
 The screen includes a **Demo network state** selector for normal, slow, offline, `429`, `502`, expired-token, and empty-data scenarios.
 
-### Run against a real backend
+### Exercise the real HTTP implementation
 
 ```bash
 flutter run \
@@ -28,6 +30,8 @@ flutter run \
   --dart-define=API_BASE_URL=https://your-api.example.com \
   --dart-define=ACCESS_TOKEN=your-short-lived-token
 ```
+
+This path is wired through Dio but was not validated against the company's live backend in this submission. The demo tenant IDs in the app are local values; if you connect to a real service, replace them with tenant IDs authorized for the supplied token.
 
 On PowerShell, run the command on one line or use PowerShell backticks instead of `\`.
 
@@ -37,7 +41,7 @@ On PowerShell, run the command on one line or use PowerShell backticks instead o
 |---|---|---|
 | `USE_FAKE_BACKEND` | `true` | Selects `FakeSmsApi` or `RealSmsApi` through dependency injection. |
 | `API_BASE_URL` | `https://api.example.invalid` | Base URL used by Dio when the real backend is enabled. |
-| `ACCESS_TOKEN` | `demo-access-token` | Adds the bearer token to real API requests. Only a non-sensitive demo value should be used in this take-home. |
+| `ACCESS_TOKEN` | `demo-access-token` | Adds the bearer token to real API requests. This is a take-home convenience, not a secure token store. |
 
 These values use Dart compile-time environment values through `String.fromEnvironment` and `--dart-define`. **Build runner is not used for configuration.** `--dart-define` values are compiled into the application and must not be treated as production secrets. A production app should obtain short-lived tokens from authentication and store them with platform-secure storage.
 
@@ -74,7 +78,7 @@ lib/
     └── tenant/
 ```
 
-The structure was planned around the requirements first. I used AI to review possible folder layouts, then kept the final structure small enough for the time-box.
+The structure follows the requirements first and keeps transport, domain, and presentation concerns separate without adding extra layers that did not improve the shipped flows.
 
 The abstract `SmsRepository` describes domain-facing operations, while `SmsRepositoryImpl`, DTOs, and API implementations remain in the data layer. This keeps transport details such as JSON, Dio, and fake responses outside domain models.
 
@@ -105,14 +109,14 @@ Every send, cost, refresh, and paginated history request requires the tenant ID.
 
 ### Networking and failure handling
 
-The initial API client used the `http` package because I had not specified Dio in the prompt. I replaced it with Dio to centralize:
+The starter used `package:http`. I introduced a small Dio-based client to centralize:
 
 - connection, send, and receive timeouts;
 - authorization and tenant headers;
 - typed error mapping;
 - `429 Retry-After`, `401`, `403`, and `502` handling.
 
-`SmsApi` has fake and real implementations selected through Riverpod. The fake implementation intentionally reproduces slow, offline, rate-limited, provider-down, expired-session, and empty states without requiring the company backend.
+`SmsApi` has fake and real implementations selected through Riverpod. The fake implementation reproduces slow, offline, rate-limited, provider-down, expired-session, and empty states without requiring the company backend.
 
 ### Money
 
@@ -136,7 +140,7 @@ The backend remains the final authority for validation in a production system.
 
 ## Assumptions made because the contract was ambiguous
 
-I sent clarification questions but continued within the deadline using these documented assumptions:
+I identified the following ambiguities and proceeded with documented assumptions so the implementation could stay within the time-box:
 
 - **Tenant discovery:** local demo tenants are acceptable because no discovery/login response was defined.
 - **Pricing:** API-returned costs are authoritative; no production price table is invented.
@@ -151,6 +155,7 @@ Current automated tests:
 
 - `test/unit_test.dart` covers exact money arithmetic, repository DTO-to-domain mapping, tenant forwarding, and fake API error behavior (offline and `429 Retry-After`).
 - `test/widget_test.dart` covers form validation blocking invalid sends, successful send flow with tenant-scoped refresh, and recoverable offline error UX.
+- `test/golden/cost_breakdown_card_golden_test.dart` protects the stable cost-summary layout and four-decimal money display.
 
 Run the full suite:
 
@@ -168,6 +173,12 @@ Run only widget tests:
 
 ```bash
 flutter test test/widget_test.dart
+```
+
+Run the golden baseline update only after intentionally reviewing the visual change:
+
+```bash
+flutter test test/golden/cost_breakdown_card_golden_test.dart --update-goldens
 ```
 
 ### GitHub Actions setup
@@ -197,24 +208,35 @@ flutter test
 
 ## Platform notes
 
-The adaptive layout uses the available width rather than stretching the phone layout. Screenshots from actual runs are included in `docs/screenshots/`:
+The adaptive layout uses the available width rather than stretching the phone layout. Screenshots from the two layout breakpoints are included in `docs/screenshots/`:
 
-- `docs/screenshots/Phone_view.png` (mobile layout, approximately 360 px width)
-- `docs/screenshots/PC_View.png` (desktop/web layout, approximately 1400 px width)
+- `docs/screenshots/Phone_view.png` for the mobile-width layout around 360 px;
+- `docs/screenshots/PC_View.png` for the desktop-width layout around 1400 px.
 
 Preview:
 
 ![Phone layout](docs/screenshots/Phone_view.png)
 ![Desktop layout](docs/screenshots/PC_View.png)
 
-Cross-platform risks I would verify on real targets include keyboard focus and text selection on desktop/web, mouse-wheel scrolling, resize behavior, platform font differences, and mobile keyboard insets.
+The main cross-platform risks I would still verify on real targets are keyboard focus, text selection, mouse-wheel scrolling, resize behavior, platform font differences, and mobile keyboard insets.
+
+## Known limitations
+
+- The real HTTP path is wired but not validated against a live company backend.
+- Token refresh was not implemented because the refresh payload was not defined.
+- Tenant discovery remains local/demo only.
+- Pending delivery status is refreshed manually through history reloads rather than automatic polling or server push.
+- The fake history data does not filter by month boundaries.
+- Full screen-reader and large-text accessibility testing was not completed.
+- Theme choice is not persisted.
+- The demo network-state controls are intended for the fake backend only.
 
 ## What I would do with another week
 
 - Integrate the real backend and add contract/integration tests around Dio.
 - Implement authentication, token refresh, logout, and secure token storage.
 - Replace local tenant discovery with authenticated tenant data.
-- Add broader widget, golden, accessibility, and multi-platform test coverage.
+- Add broader widget, accessibility, and multi-platform test coverage.
 - Add a deliberate delivery-status polling/backoff policy or server-push integration once the backend mechanism is defined.
 - Move all dependency wiring into a dedicated `app/di` module if the codebase grows.
 

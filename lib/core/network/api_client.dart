@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -94,8 +93,6 @@ class ApiClient {
       throw _mapDioException(error);
     } on TimeoutException {
       throw AppFailure.timeout();
-    } on SocketException {
-      throw AppFailure.offline();
     } on AppFailure {
       rethrow;
     } catch (_) {
@@ -123,10 +120,6 @@ class ApiClient {
         return AppFailure.unknown('Bad SSL certificate.');
 
       case DioExceptionType.unknown:
-        final rawError = error.error;
-        if (rawError is SocketException) {
-          return AppFailure.offline();
-        }
         return AppFailure.unknown();
       default:
         return AppFailure.unknown();

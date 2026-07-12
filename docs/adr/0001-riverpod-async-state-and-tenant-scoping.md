@@ -54,7 +54,7 @@ Rejected for this demo. It required custom equality to guarantee stable family i
 - Sending, refreshing, and loading more share one coherent immutable state.
 - Widgets remain focused on display and user interaction.
 - Repository implementations can be replaced in tests through provider overrides.
-- Each tenant ID receives a separate family state and dependency chain.
+- Each tenant ID receives a separate family state.
 - Fake and real backends use the same presentation and domain code.
 
 ### Negative and follow-up
@@ -63,3 +63,4 @@ Rejected for this demo. It required custom equality to guarantee stable family i
 - The current demo has only two tenant IDs; a production app with many tenants would need an explicit disposal/cache policy.
 - Local demo tenant selection is not authorization. The backend must still verify that the bearer token may access the supplied `X-Tenant-Id`.
 - Full authentication and tenant discovery remain deferred until their contracts are defined.
+- The responsive layout relies on width breakpoints rather than device detection, so the same screen can stack vertically on narrow widths and split into two columns on wider desktop or web windows.
