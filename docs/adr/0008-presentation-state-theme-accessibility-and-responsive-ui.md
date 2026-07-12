@@ -14,7 +14,7 @@ The assignment required explicit state management, real loading/error states, re
 
 The starter mixed controllers, network calls, global state, calculations, and widgets in one `StatefulWidget`. A single `loading` flag could not distinguish initial loading, sending, refreshing, or pagination.
 
-The original `1.md` selected Riverpod and GoRouter but did not fully record how the presentation requirement shaped the resulting state model.
+The initial assignment notes selected Riverpod and GoRouter but did not fully record how the presentation requirement shaped the resulting state model.
 
 ## Decision drivers
 

@@ -147,13 +147,48 @@ I sent clarification questions but continued within the deadline using these doc
 
 ## Tests and CI
 
-The intended test split is:
+Current automated tests:
 
-- domain/data unit tests for exact money arithmetic, DTO mapping, repository behavior, and fake API failure modes;
-- widget tests for send success and at least one failure path;
-- one golden test for a stable screen state.
+- `test/unit_test.dart` covers exact money arithmetic, repository DTO-to-domain mapping, tenant forwarding, and fake API error behavior (offline and `429 Retry-After`).
+- `test/widget_test.dart` covers form validation blocking invalid sends, successful send flow with tenant-scoped refresh, and recoverable offline error UX.
 
-GitHub Actions runs:
+Run the full suite:
+
+```bash
+flutter test
+```
+
+Run only unit tests:
+
+```bash
+flutter test test/unit_test.dart
+```
+
+Run only widget tests:
+
+```bash
+flutter test test/widget_test.dart
+```
+
+### GitHub Actions setup
+
+The CI workflow file is stored at:
+
+- `.github/workflows/flutter-ci.yml`
+
+This workflow runs on:
+
+- push to `main`;
+- pull request open/update;
+- manual trigger from the **Actions** tab (`workflow_dispatch`).
+
+It executes:
+
+- `flutter pub get`
+- `flutter analyze`
+- `flutter test`
+
+GitHub Actions job summary:
 
 ```text
 flutter analyze
@@ -162,10 +197,15 @@ flutter test
 
 ## Platform notes
 
-The adaptive layout uses the available width rather than stretching the phone layout. Before final submission, the repository should include screenshots from actual runs at approximately:
+The adaptive layout uses the available width rather than stretching the phone layout. Screenshots from actual runs are included in `docs/screenshots/`:
 
-- 360 px mobile width;
-- 1400 px desktop or web width.
+- `docs/screenshots/Phone_view.png` (mobile layout, approximately 360 px width)
+- `docs/screenshots/PC_View.png` (desktop/web layout, approximately 1400 px width)
+
+Preview:
+
+![Phone layout](docs/screenshots/Phone_view.png)
+![Desktop layout](docs/screenshots/PC_View.png)
 
 Cross-platform risks I would verify on real targets include keyboard focus and text selection on desktop/web, mouse-wheel scrolling, resize behavior, platform font differences, and mobile keyboard insets.
 

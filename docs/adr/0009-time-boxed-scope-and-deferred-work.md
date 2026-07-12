@@ -12,7 +12,7 @@ Accepted — retrospective
 
 The assignment expected a professional rebuild but did not expect every possible production concern to be completed. Several contract areas were ambiguous, and completing guessed features would reduce confidence rather than improve it.
 
-The original `1.md` explicitly questioned bulk SMS, token refresh, tenant discovery, status polling, pricing, and month boundaries. No clarification was received.
+The initial assignment notes explicitly questioned bulk SMS, token refresh, tenant discovery, status polling, pricing, and month boundaries. No clarification was received.
 
 The implementation therefore prioritized the required user journeys and the defects most likely to cause real incidents:
 
